@@ -1,0 +1,22 @@
+---
+# This playbook deploys vault
+- hosts: gcp_role_vault
+  become: yes
+  gather_facts: yes
+
+  vars:
+    kms_project: coen-ops-mahamed-ali
+    kms_location: europe-west2
+    kms_keyring: ansible-1
+    kms_crypto_key: test-1
+    vault_ui_enabled: true
+    vault_tls_bucket: coen-mahamed-ali-vault-data
+    vault_log_level: debug
+    storage_bucket: ""
+    api_addr: "https://vault.upo.one"
+    vault_version: 1.4.2
+    vault_port: 8200
+    vault_args: ""
+
+  roles:
+  - vault

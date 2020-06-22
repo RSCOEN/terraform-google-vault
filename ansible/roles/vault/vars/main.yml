@@ -1,0 +1,5 @@
+---
+vault_tls_disable_client_certs: false
+vault_tls_require_and_verify_client_cert: false
+vault_ui_enabled: true
+

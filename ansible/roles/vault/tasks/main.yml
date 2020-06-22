@@ -1,0 +1,63 @@
+---
+- name: create vault user
+  user: 
+    name: vault
+    state: present
+    shell: /bin/false
+    home: /etc/vault
+
+- name: Install dependencies
+  apt:
+    update_cache: yes
+    name:
+      - supervisor
+      - make
+      - git
+      - jq
+      - zip
+
+- name: Vault install
+  unarchive:
+    src: https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip
+    dest: /usr/local/bin
+    remote_src: yes
+
+- name: Copy systemd file
+  copy:
+    src: vault.service
+    dest: /etc/systemd/system/vault.service
+  register: systemd_unit
+
+- name: reload systemd
+  systemd:
+    daemon-reload: true
+  when:
+    - systemd_unit is changed
+
+- name: Check Vault mlock capability
+  command: "setcap cap_ipc_lock=+ep /usr/local/bin/vault"
+  changed_when: false  # read-only task
+  ignore_errors: true
+  register: vault_mlock_capability
+
+- name: Enable non root mlock capability
+  command: "setcap cap_ipc_lock=+ep /usr/local/bin/vault"
+  when: vault_mlock_capability is failed
+
+- name: Vault env configuration
+  template:
+    src: vault.env.j2
+    dest: /etc/vault/vault.env
+    owner: vault
+    group: vault
+    mode: "0400"
+  notify: restart vault
+
+- name: Vault main configuration
+  template:
+    src: config.hcl.j2
+    dest: /etc/vault/config.hcl
+    owner: vault
+    group: vault
+    mode: "0400"
+  notify: restart vault
